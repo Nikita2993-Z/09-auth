@@ -1,0 +1,12 @@
+.layout {
+  display: flex;
+  gap: 20px;
+}
+
+.sidebar {
+  width: 200px;
+}
+
+.main {
+  flex: 1;
+}
