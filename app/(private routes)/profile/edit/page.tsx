@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useAuthStore } from '@/lib/store/authStore';
-import { updateProfile } from '@/lib/api';
+import { updateProfile } from '@/lib/api/clientApi';
 import css from './page.module.css';
 
 export default function EditProfilePage() {

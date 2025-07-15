@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { fetchNotes } from "@/lib/api";
+import { fetchNotes } from "@/lib/api/clientApi";
 import {
   HydrationBoundary,
   QueryClient,
