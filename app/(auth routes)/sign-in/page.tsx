@@ -4,7 +4,7 @@ import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { login } from '@/lib/api';
 import { useAuthStore } from '@/lib/store/authStore';
-import css from './page.module.css';
+import css from './SignInPage.module.css';
 
 export default function SignInPage() {
   const [email, setEmail] = useState('');

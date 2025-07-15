@@ -2,7 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { register } from '@/lib/api';
+import { register } from '@/lib/api/clientApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import css from './page.module.css';
 
@@ -11,7 +11,7 @@ export default function SignUpPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,8 +30,9 @@ export default function SignUpPage() {
 
   return (
     <main className={css.mainContent}>
-      <h1 className={css.formTitle}>Sign up</h1>
       <form className={css.form} onSubmit={handleSubmit}>
+        <h1 className={css.formTitle}>Sign up</h1>
+
         <div className={css.formGroup}>
           <label htmlFor="email">Email</label>
           <input
@@ -43,6 +44,7 @@ export default function SignUpPage() {
             required
           />
         </div>
+
         <div className={css.formGroup}>
           <label htmlFor="password">Password</label>
           <input
@@ -54,11 +56,13 @@ export default function SignUpPage() {
             required
           />
         </div>
+
         <div className={css.actions}>
           <button type="submit" className={css.submitButton}>
             Register
           </button>
         </div>
+
         {error && <p className={css.error}>{error}</p>}
       </form>
     </main>
