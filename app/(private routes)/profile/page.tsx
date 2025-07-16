@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
-import ProfileClient from './ProfileClient';
+import Image from 'next/image';
+import Link from 'next/link';
+import { fetchProfileServer } from '@/lib/api/serverApi';
 import css from './page.module.css';
 
 export const metadata: Metadata = {
@@ -9,16 +11,30 @@ export const metadata: Metadata = {
     title: 'Profile – NoteHub',
     description: 'Manage your NoteHub profile',
     url: 'https://your-domain.vercel.app/profile',
-    images: [
-      { url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg' },
-    ],
+    images: [{ url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg' }],
   },
 };
 
-export default function ProfilePage() {
+export default async function ProfilePage() {
+  const user = await fetchProfileServer();
+  const avatarSrc = user.avatar ?? '/default-avatar.png';
+
   return (
     <main className={css.mainContent}>
-      <ProfileClient />
+      <div className={css.profile}>
+        <Image
+          src={avatarSrc}
+          alt={`${user.username} avatar`}
+          width={100}
+          height={100}
+          className={css.avatar}
+        />
+        <h1 className={css.username}>{user.username}</h1>
+        <p className={css.email}>{user.email}</p>
+        <Link href="/profile/edit" className={css.editLink}>
+          Edit Profile
+        </Link>
+      </div>
     </main>
   );
 }

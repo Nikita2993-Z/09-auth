@@ -9,12 +9,12 @@ import NotesClient from "./Notes.client";
 import type { Note } from "@/types/note";
 import { notFound } from "next/navigation";
 
-interface PageProps {
+export async function generateMetadata({
+  params: { slug },
+}: {
   params: { slug: string[] };
-}
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const rawTag = params.slug[0];
+}): Promise<Metadata> {
+  const rawTag = slug[0];
   const tag = rawTag === "All" ? "All" : rawTag;
   const title = `Notes filtered by ${tag} – NoteHub`;
   const description = `Viewing notes filtered by ${tag} in NoteHub.`;
@@ -27,13 +27,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       url,
-      images: [{ url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg" }],
+      images: [
+        { url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg" },
+      ],
     },
   };
 }
 
-export default async function FilteredNotesPage({ params }: PageProps) {
-  const { slug } = params;
+export default async function FilteredNotesPage({
+  params: { slug },
+}: {
+  params: { slug: string[] };
+}) {
   const rawTag = slug[0];
   const tag = rawTag === "All" ? undefined : rawTag;
   const pageNum = 1;
@@ -44,12 +49,10 @@ export default async function FilteredNotesPage({ params }: PageProps) {
     queryFn: () => fetchNotes("", pageNum, tag),
   });
 
-  const initialData = queryClient.getQueryData<{ notes: Note[]; totalPages: number }>([
-    "notes",
-    tag,
-    "",
-    pageNum,
-  ]);
+  const initialData = queryClient.getQueryData<{
+    notes: Note[];
+    totalPages: number;
+  }>(["notes", tag, "", pageNum]);
 
   if (!initialData) {
     return notFound();

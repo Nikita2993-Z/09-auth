@@ -1,59 +1,36 @@
-import { NextResponse } from 'next/server';
-import  api  from '../../api';
+import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import api from '@/lib/api/api';
+import type { Note } from '@/types/note';
 
-type Props = {
-  params: Promise<{ id: string }>;
-};
+interface Props {
+  params: { id: string };
+}
 
-export async function GET(request: Request, { params }: Props) {
-  const cookieStore = await cookies();
-  const { id } = await params;
-  const { data } = await api(`/notes/${id}`, {
-    headers: {
-      Cookie: cookieStore.toString(),
-    },
+export async function GET(request: NextRequest, { params }: Props) {
+  const cookieStore = cookies();
+  const { id } = params;
+  const res = await api.get<Note>(`/notes/${id}`, {
+    headers: { Cookie: cookieStore.toString() },
   });
-  if (data) {
-    return NextResponse.json(data);
-  }
-  return NextResponse.json({ error: 'Failed to fetch note' }, { status: 500 });
+  return NextResponse.json(res.data);
 }
 
-export async function DELETE(request: Request, { params }: Props) {
-  const cookieStore = await cookies();
-  const { id } = await params;
-
-  try {
-    await api.delete(`/notes/${id}`, {
-      headers: {
-        Cookie: cookieStore.toString(),
-      },
-    });
-    return NextResponse.json({ message: 'Note deleted successfully' }, { status: 200 });
-  } catch (error) {
-    console.error('Error deleting note:', error);
-    return NextResponse.json({ error: 'Failed to delete note' }, { status: 500 });
-  }
+export async function DELETE(request: NextRequest, { params }: Props) {
+  const cookieStore = cookies();
+  const { id } = params;
+  await api.delete(`/notes/${id}`, {
+    headers: { Cookie: cookieStore.toString() },
+  });
+  return NextResponse.json({ message: 'Note deleted successfully' });
 }
 
-export async function PATCH(request: Request, { params }: Props) {
-  const cookieStore = await cookies();
-  const { id } = await params;
+export async function PATCH(request: NextRequest, { params }: Props) {
+  const cookieStore = cookies();
+  const { id } = params;
   const body = await request.json();
-
-  try {
-    const { data } = await api.patch(`/notes/${id}`, body, {
-      headers: {
-        Cookie: cookieStore.toString(),
-      },
-    });
-    if (data) {
-      return NextResponse.json(data);
-    }
-    return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
-  } catch (error) {
-    console.log(error);
-    return NextResponse.json({ error: 'Failed to update note' }, { status: 500 });
-  }
+  const res = await api.patch<Note>(`/notes/${id}`, body, {
+    headers: { Cookie: cookieStore.toString() },
+  });
+  return NextResponse.json(res.data);
 }

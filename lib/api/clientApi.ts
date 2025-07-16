@@ -32,7 +32,7 @@ export async function register(email: string, password: string): Promise<User> {
 
 /** POST /api/auth/logout */
 export async function logout(): Promise<void> {
-  await api.post('/auth/logout');
+  await api.post<void>('/auth/logout');
 }
 
 /** GET /api/users/me */
@@ -62,7 +62,7 @@ export async function fetchNotes(
 }
 
 /** GET /api/notes/:id */
-export async function fetchNoteById(id: number): Promise<Note> {
+export async function fetchNoteById(id: string): Promise<Note> {
   const { data } = await api.get<Note>(`/notes/${id}`);
   return data;
 }
@@ -74,7 +74,14 @@ export async function createNote(note: Draft): Promise<Note> {
 }
 
 /** DELETE /api/notes/:id */
-export async function deleteNote(id: number): Promise<Note> {
+export async function deleteNote(id: string): Promise<Note> {
   const { data } = await api.delete<Note>(`/notes/${id}`);
+  return data;
+}
+export async function updateNote(
+  id: string,
+  partial: Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>
+): Promise<Note> {
+  const { data } = await api.patch<Note>(`/notes/${id}`, partial);
   return data;
 }

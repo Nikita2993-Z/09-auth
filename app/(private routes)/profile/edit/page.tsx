@@ -10,7 +10,9 @@ import css from './page.module.css';
 export default function EditProfilePage() {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const setUser = useAuthStore((state) => state.setUser);
   const [username, setUsername] = useState<string>(user?.username ?? '');
+
   useEffect(() => {
     if (user) {
       setUsername(user.username);
@@ -23,7 +25,8 @@ export default function EditProfilePage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    await updateProfile({ ...user, username });
+    const updatedUser = await updateProfile({ ...user, username });
+    setUser(updatedUser);
     router.push('/profile');
   };
 

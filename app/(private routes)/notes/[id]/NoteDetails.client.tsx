@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import { useQuery } from "@tanstack/react-query";
 import { fetchNoteById } from "@/lib/api/clientApi";
@@ -9,6 +9,7 @@ type NoteDetailsClientProps = {
 };
 
 export default function NoteDetailsClient({ id }: NoteDetailsClientProps) {
+  const noteId = id.toString();
   const isValidId = !isNaN(id) && id > 0;
 
   const {
@@ -18,8 +19,8 @@ export default function NoteDetailsClient({ id }: NoteDetailsClientProps) {
     isSuccess,
     isError,
   } = useQuery({
-    queryKey: ["note", id],
-    queryFn: () => fetchNoteById(id),
+    queryKey: ["note", noteId],
+    queryFn: () => fetchNoteById(noteId),
     enabled: isValidId,
     refetchOnMount: false,
   });
@@ -27,7 +28,7 @@ export default function NoteDetailsClient({ id }: NoteDetailsClientProps) {
   if (!isValidId) {
     return (
       <p className={styles.errorMessage}>
-        Invalid note ID: <code>{String(id)}</code>
+        Invalid note ID: <code>{noteId}</code>
       </p>
     );
   }

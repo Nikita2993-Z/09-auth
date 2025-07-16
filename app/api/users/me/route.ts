@@ -1,41 +1,28 @@
-import { NextResponse, NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'https://notehub-api.goit.study';
 
 export async function GET(req: NextRequest) {
-  const cookieHeader = req.headers.get('cookie') || '';
-  const backendRes = await fetch(
-    'https://notehub-api.goit.study/users/me',
-    {
-      method: 'GET',
-      headers: { cookie: cookieHeader },
-      credentials: 'include',
-    }
-  );
-
-  if (!backendRes.ok) {
-    return new NextResponse(null, { status: backendRes.status });
-  }
-
-  const data = await backendRes.json();
-  return NextResponse.json(data);
+  const res = await fetch(`${BACKEND}/users/me`, {
+    headers: { cookie: req.headers.get('cookie') ?? '' },
+    credentials: 'include',
+  });
+  if (!res.ok) return NextResponse.error();
+  const data = await res.json();
+  return NextResponse.json(data, { status: res.status });
 }
 
 export async function PATCH(req: NextRequest) {
-  const cookieHeader = req.headers.get('cookie') || '';
   const body = await req.json();
-
-  const backendRes = await fetch(
-    'https://notehub-api.goit.study/users/me',
-    {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        cookie: cookieHeader,
-      },
-      credentials: 'include',
-      body: JSON.stringify(body),
-    }
-  );
-
-  const data = await backendRes.json();
-  return NextResponse.json(data, { status: backendRes.status });
+  const res = await fetch(`${BACKEND}/users/me`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      cookie: req.headers.get('cookie') ?? '',
+    },
+    credentials: 'include',
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return NextResponse.error();
+  const data = await res.json();
+  return NextResponse.json(data, { status: res.status });
 }
