@@ -1,35 +1,41 @@
+import axios, { AxiosResponse } from 'axios';
 import { cookies } from 'next/headers';
 import type { User } from '@/types/user';
 import type { Note } from '@/types/note';
 
-const BACKEND_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://notehub-api.goit.study';
+const BACKEND_URL = 'https://notehub-api.goit.study';
 
-async function fetchWithCookies<T>(path: string, opts?: RequestInit): Promise<T> {
-  const cookieHeader = cookies().toString();
-  const res = await fetch(`${BACKEND_URL}${path}`, {
-    ...opts,
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-      cookie: cookieHeader,
-      ...(opts?.headers || {}),
-    },
-  });
-  if (!res.ok) throw new Error(`Fetch error ${res.status} on ${path}`);
-  return res.json();
-}
+const serverApi = axios.create({
+  baseURL: BACKEND_URL,
+  withCredentials: true,
+});
 
-export async function getSessionServer(): Promise<User | null> {
+
+export async function getSessionServer(): Promise<AxiosResponse<User> | null> {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
   try {
-    return await fetchWithCookies<User>('/auth/session', { method: 'GET' });
-  } catch {
+    return await serverApi.get<User>('/auth/session', {
+      headers: { Cookie: cookieHeader },
+    });
+  } catch (err: unknown) {
+    if (axios.isAxiosError(err) && err.response?.status === 404) {
+      return null;
+    }
+    console.error('Session check failed:', err);
     return null;
   }
 }
 
 export async function fetchProfileServer(): Promise<User> {
-  return await fetchWithCookies<User>('/users/me', { method: 'GET' });
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const res = await serverApi.get<User>('/users/me', {
+    headers: { Cookie: cookieHeader },
+  });
+  return res.data;
 }
 
 export async function fetchNotesServer(
@@ -37,13 +43,27 @@ export async function fetchNotesServer(
   page: number,
   tag?: string
 ): Promise<{ notes: Note[]; totalPages: number }> {
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
   const perPage = 12;
-  const params = new URLSearchParams({ page: String(page), perPage: String(perPage) });
-  if (search) params.set('search', search);
-  if (tag) params.set('tag', tag);
-  return await fetchWithCookies<{ notes: Note[]; totalPages: number }>(`/notes?${params}`);
+  const params: Record<string, string | number> = { page, perPage };
+  if (search) params.search = search;
+  if (tag) params.tag = tag;
+
+  const res = await serverApi.get<{ notes: Note[]; totalPages: number }>('/notes', {
+    headers: { Cookie: cookieHeader },
+    params,
+  });
+  return res.data;
 }
 
 export async function fetchNoteByIdServer(id: string): Promise<Note> {
-  return await fetchWithCookies<Note>(`/notes/${id}`, { method: 'GET' });
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.toString();
+
+  const res = await serverApi.get<Note>(`/notes/${id}`, {
+    headers: { Cookie: cookieHeader },
+  });
+  return res.data;
 }

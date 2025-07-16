@@ -1,41 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { getSessionServer } from './lib/api/serverApi';
 
-const privateRoutes = ['/profile', '/notes', '/notes/filter', '/notes/action'];
+// Приватные маршруты (всё, что начинается с '/profile' или '/notes')
+const privateRoutes = ['/profile', '/notes'];
+// Публичные маршруты для входа/регистрации
 const publicRoutes = ['/sign-in', '/sign-up'];
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const cookieStore = await cookies();
-  const accessToken = cookieStore.get('accessToken')?.value;
-  const refreshToken = cookieStore.get('refreshToken')?.value;
+  const accessToken = request.cookies.get('accessToken')?.value;
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isPrivateRoute = privateRoutes.some(route => pathname.startsWith(route));
 
-  if (!accessToken) {
-    if (refreshToken) {
-      const session = await getSessionServer();
-      if (session) {
-        const newCookies = cookies().toString();
-        if (isPublicRoute) {
-          return NextResponse.redirect(new URL('/', request.url), {
-            headers: { Cookie: newCookies },
-          });
-        }
-        if (isPrivateRoute) {
-          return NextResponse.next({ headers: { Cookie: newCookies } });
-        }
-      }
-    }
-    if (isPublicRoute) return NextResponse.next();
-    if (isPrivateRoute) return NextResponse.redirect(new URL('/sign-in', request.url));
-  } else {
-    if (isPublicRoute) return NextResponse.redirect(new URL('/', request.url));
-    if (isPrivateRoute) return NextResponse.next();
+  // Неавторизованным доступ к приватным страницам запрещён
+  if (!accessToken && isPrivateRoute) {
+    return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
+  // Авторизованным запрещён доступ к страницам входа/регистрации
+  if (accessToken && isPublicRoute) {
+    return NextResponse.redirect(new URL('/profile', request.url));
+  }
+
+  // По умолчанию продолжаем обработку
   return NextResponse.next();
 }
 
@@ -43,8 +30,6 @@ export const config = {
   matcher: [
     '/profile/:path*',
     '/notes/:path*',
-    '/notes/filter/:path*',
-    '/notes/action/:path*',
     '/sign-in',
     '/sign-up',
   ],

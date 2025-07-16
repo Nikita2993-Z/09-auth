@@ -8,7 +8,6 @@ export interface NotesResponse {
   totalPages: number;
 }
 
-/** GET /api/auth/session */
 export async function getSession(): Promise<User | null> {
   try {
     const { data } = await api.get<User>('/auth/session');
@@ -18,36 +17,36 @@ export async function getSession(): Promise<User | null> {
   }
 }
 
-/** POST /api/auth/login */
+
 export async function login(email: string, password: string): Promise<User> {
   const { data } = await api.post<User>('/auth/login', { email, password });
   return data;
 }
 
-/** POST /api/auth/register */
+
 export async function register(email: string, password: string): Promise<User> {
   const { data } = await api.post<User>('/auth/register', { email, password });
   return data;
 }
 
-/** POST /api/auth/logout */
+
 export async function logout(): Promise<void> {
   await api.post<void>('/auth/logout');
 }
 
-/** GET /api/users/me */
+
 export async function fetchProfile(): Promise<User> {
   const { data } = await api.get<User>('/users/me');
   return data;
 }
 
-/** PATCH /api/users/me */
+
 export async function updateProfile(user: Partial<User>): Promise<User> {
   const { data } = await api.patch<User>('/users/me', user);
   return data;
 }
 
-/** GET /api/notes?search=&page=&perPage=12&tag= */
+
 export async function fetchNotes(
   search: string,
   page: number,
@@ -61,19 +60,19 @@ export async function fetchNotes(
   return data;
 }
 
-/** GET /api/notes/:id */
+
 export async function fetchNoteById(id: string): Promise<Note> {
   const { data } = await api.get<Note>(`/notes/${id}`);
   return data;
 }
 
-/** POST /api/notes */
+
 export async function createNote(note: Draft): Promise<Note> {
   const { data } = await api.post<Note>('/notes', note);
   return data;
 }
 
-/** DELETE /api/notes/:id */
+
 export async function deleteNote(id: string): Promise<Note> {
   const { data } = await api.delete<Note>(`/notes/${id}`);
   return data;

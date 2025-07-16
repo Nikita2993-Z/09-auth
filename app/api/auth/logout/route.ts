@@ -1,27 +1,19 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(req: NextRequest) {
-  const { email, password } = await req.json();
-
-  // Проксируем запрос на внешний бэкенд
+export async function POST() {
+  
   const backendRes = await fetch(
-    'https://notehub-api.goit.study/auth/login',
+    'https://notehub-api.goit.study/auth/logout',
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ email, password }),
     }
   );
 
-  // Если бэкенд вернул ошибку, пробросим статус и сообщение
-  const responseBody = await backendRes.text();
-  const response = NextResponse.json(
-    responseBody ? JSON.parse(responseBody) : null,
-    { status: backendRes.status }
-  );
+  
+  const response = NextResponse.json(null, { status: backendRes.status });
 
-  // Проксируем Set-Cookie из ответа бэкенда
+
   const setCookie = backendRes.headers.get('set-cookie');
   if (setCookie) {
     setCookie
