@@ -1,32 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(req: NextRequest) {
-  // Запрос к внешнему бэкенду
-  const backendRes = await fetch('https://notehub-api.goit.study/auth/session', {
-    method: 'GET',
-    credentials: 'include',
-    headers: { cookie: req.headers.get('cookie') || '' },
-  });
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'https://notehub-api.goit.study';
 
-  // Если сессия неактивна — вернём 200 без тела
-  if (backendRes.status === 204 || backendRes.status === 200 && (await backendRes.text()) === '') {
-    return new NextResponse(null, { status: 200 });
+export async function GET(request: NextRequest) {
+  try {
+    const cookieHeader = request.headers.get('cookie') || '';
+    const backendRes = await fetch(`${BACKEND}/auth/session`, {
+      headers: { cookie: cookieHeader },
+      credentials: 'include',
+    });
+
+    // если нет активной сессии — возвращаем null
+    if (backendRes.status === 204 || backendRes.status === 200 && (await backendRes.text()) === '') {
+      return NextResponse.json(null);
+    }
+
+    const data = await backendRes.json();
+    const response = NextResponse.json(data);
+
+    // проксируем куки, если есть
+    const setCookie = backendRes.headers.get('set-cookie');
+    if (setCookie) {
+      setCookie
+        .split(',')
+        .map((c) => c.trim())
+        .forEach((cookie) => {
+          response.headers.append('Set-Cookie', cookie);
+        });
+    }
+
+    return response;
+  } catch (err) {
+    // упали по-настоящему — логируем и возвращаем пустую сессию
+    console.error('Session proxy error', err);
+    return NextResponse.json(null);
   }
-
-  // Иначе пробросим JSON-ответ пользователя
-  const data = await backendRes.json();
-  const response = NextResponse.json(data, { status: backendRes.status });
-
-  // Проксируем куки (если они есть)
-  const setCookie = backendRes.headers.get('set-cookie');
-  if (setCookie) {
-    setCookie
-      .split(',')
-      .map((c) => c.trim())
-      .forEach((cookie) => {
-        response.headers.append('Set-Cookie', cookie);
-      });
-  }
-
-  return response;
 }

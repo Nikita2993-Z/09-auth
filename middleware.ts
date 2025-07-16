@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getSessionServer } from './lib/api/serverApi';
 
-const privateRoutes = ['/profile'];
+const privateRoutes = ['/profile', '/notes', '/notes/filter', '/notes/action'];
 const publicRoutes = ['/sign-in', '/sign-up'];
 
 export async function middleware(request: NextRequest) {
@@ -16,8 +16,8 @@ export async function middleware(request: NextRequest) {
 
   if (!accessToken) {
     if (refreshToken) {
-      const user = await getSessionServer();
-      if (user) {
+      const session = await getSessionServer();
+      if (session) {
         const newCookies = cookies().toString();
         if (isPublicRoute) {
           return NextResponse.redirect(new URL('/', request.url), {
@@ -25,30 +25,27 @@ export async function middleware(request: NextRequest) {
           });
         }
         if (isPrivateRoute) {
-          return NextResponse.next({
-            headers: { Cookie: newCookies },
-          });
+          return NextResponse.next({ headers: { Cookie: newCookies } });
         }
       }
     }
-    if (isPublicRoute) {
-      return NextResponse.next();
-    }
-    if (isPrivateRoute) {
-      return NextResponse.redirect(new URL('/sign-in', request.url));
-    }
+    if (isPublicRoute) return NextResponse.next();
+    if (isPrivateRoute) return NextResponse.redirect(new URL('/sign-in', request.url));
   } else {
-    if (isPublicRoute) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
-    if (isPrivateRoute) {
-      return NextResponse.next();
-    }
+    if (isPublicRoute) return NextResponse.redirect(new URL('/', request.url));
+    if (isPrivateRoute) return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/profile/:path*', '/sign-in', '/sign-up'],
+  matcher: [
+    '/profile/:path*',
+    '/notes/:path*',
+    '/notes/filter/:path*',
+    '/notes/action/:path*',
+    '/sign-in',
+    '/sign-up',
+  ],
 };
