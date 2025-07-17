@@ -1,32 +1,29 @@
-'use client';
+'use client'
 
-import { useState, FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
-import { login } from '@/lib/api/clientApi';
-import { useAuthStore } from '@/lib/store/authStore';
-import css from './SignInPage.module.css';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { login } from '@/lib/api/clientApi'
+import { useAuthStore } from '@/lib/store/authStore'
+import css from './SignInPage.module.css'
 
 export default function SignInPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const setUser = useAuthStore(state => state.setUser)
+  const router = useRouter()
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     try {
-      const user = await login(email, password);
-      setUser(user);
-      router.push('/profile');
-    } catch (err: unknown) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred during login';
-      setError(message);
+      const user = await login(email, password)
+      // Сохраняем пользователя в Zustand-сторе
+      setUser(user)
+      // После этого Навигация увидит isAuthenticated=true
+      router.push('/profile')
+    } catch (err) {
+      console.error('Login failed', err)
     }
-  };
+  }
 
   return (
     <main className={css.mainContent}>
@@ -37,9 +34,9 @@ export default function SignInPage() {
           <input
             id="email"
             type="email"
-            className={css.input}
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={e => setEmail(e.target.value)}
+            className={css.input}
             required
           />
         </div>
@@ -48,9 +45,9 @@ export default function SignInPage() {
           <input
             id="password"
             type="password"
-            className={css.input}
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
+            onChange={e => setPassword(e.target.value)}
+            className={css.input}
             required
           />
         </div>
@@ -59,8 +56,7 @@ export default function SignInPage() {
             Log in
           </button>
         </div>
-        {error && <p className={css.error}>{error}</p>}
       </form>
     </main>
-);
+  )
 }

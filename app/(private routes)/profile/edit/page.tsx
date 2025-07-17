@@ -1,38 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useAuthStore } from '@/lib/store/authStore';
-import { updateProfile } from '@/lib/api/clientApi';
 import css from './page.module.css';
+import { updateProfile, fetchProfile } from '@/lib/api/clientApi';
+import { useAuthStore } from '@/lib/store/authStore';
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  const setUser = useAuthStore((state) => state.setUser);
-  const [username, setUsername] = useState<string>(user?.username ?? '');
+  const setUser = useAuthStore((s) => s.setUser);
+  const user = useAuthStore((s) => s.user);
+
+  const [username, setUsername] = useState(user?.username || '');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
-      setUsername(user.username);
+    async function load() {
+      if (!user) {
+        try {
+          const profile = await fetchProfile();
+          setUsername(profile.username);
+        } catch {
+          // ignore
+        }
+      }
+      setLoading(false);
     }
+    load();
   }, [user]);
 
-  if (!user) {
-    return null;
-  }
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSave = async (e: FormEvent) => {
     e.preventDefault();
-    const updatedUser = await updateProfile({ ...user, username });
-    setUser(updatedUser);
-    router.push('/profile');
+   try {
+  const updated = await updateProfile({ username });
+  setUser(updated);
+  router.push('/profile');
+} catch {
+  setError('Failed to update username.');
+}
   };
 
   const handleCancel = () => {
-    router.back();
+    router.push('/profile');
   };
+
+  if (loading) {
+    return <div className={css.loader}>Loading...</div>;
+  }
 
   return (
     <main className={css.mainContent}>
@@ -40,7 +56,7 @@ export default function EditProfilePage() {
         <h1 className={css.formTitle}>Edit Profile</h1>
         <div className={css.avatarWrapper}>
           <Image
-            src={user.avatar ?? '/avatar-placeholder.png'}
+            src={user?.avatar || '/avatar-placeholder.png'}
             alt="User Avatar"
             width={120}
             height={120}
@@ -56,9 +72,11 @@ export default function EditProfilePage() {
               className={css.input}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </div>
-          <p>Email: {user.email}</p>
+          <p>Email: {user?.email}</p>
+          {error && <p className={css.error}>{error}</p>}
           <div className={css.actions}>
             <button type="submit" className={css.saveButton}>
               Save
