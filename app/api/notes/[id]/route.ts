@@ -1,36 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import api from '@/lib/api/api';
-import type { Note } from '@/types/note';
 
-interface Props {
-  params: { id: string };
+const BACKEND = 'https://notehub-api.goit.study'; 
+// Хочешь — замени на env, НО не ставь localhost:3000, иначе зациклится прокси!
+
+interface RouteContext {
+  params: Promise<{ id: string }>;
 }
 
-export async function GET(request: NextRequest, { params }: Props) {
-  const cookieStore = cookies();
-  const { id } = params;
-  const res = await api.get<Note>(`/notes/${id}`, {
-    headers: { Cookie: cookieStore.toString() },
+/* ---------- GET /api/notes/:id ---------- */
+export async function GET(req: NextRequest, { params }: RouteContext) {
+  const { id } = await params;
+  const cookieHeader = req.headers.get('cookie') ?? '';
+
+  const backendRes = await fetch(`${BACKEND}/notes/${id}`, {
+    headers: { cookie: cookieHeader, 'Content-Type': 'application/json' },
+    // credentials не обязателен, мы сами передаём cookie
   });
-  return NextResponse.json(res.data);
+
+  let data: unknown = null;
+  const ct = backendRes.headers.get('content-type') ?? '';
+  if (ct.includes('application/json')) {
+    try {
+      data = await backendRes.json();
+    } catch {
+      data = null;
+    }
+  }
+
+  // Если бекенд вернул 404, 401 — проксируем статус без мутаций
+  const response = NextResponse.json(data, { status: backendRes.status });
+
+  const setCookie = backendRes.headers.get('set-cookie');
+  if (setCookie) {
+    response.headers.set('Set-Cookie', setCookie);
+  }
+
+  return response;
 }
 
-export async function DELETE(request: NextRequest, { params }: Props) {
-  const cookieStore = cookies();
-  const { id } = params;
-  await api.delete(`/notes/${id}`, {
-    headers: { Cookie: cookieStore.toString() },
-  });
-  return NextResponse.json({ message: 'Note deleted successfully' });
-}
+/* ---------- DELETE /api/notes/:id ---------- */
+export async function DELETE(req: NextRequest, { params }: RouteContext) {
+  const { id } = await params;
+  const cookieHeader = req.headers.get('cookie') ?? '';
 
-export async function PATCH(request: NextRequest, { params }: Props) {
-  const cookieStore = cookies();
-  const { id } = params;
-  const body = await request.json();
-  const res = await api.patch<Note>(`/notes/${id}`, body, {
-    headers: { Cookie: cookieStore.toString() },
+  const backendRes = await fetch(`${BACKEND}/notes/${id}`, {
+    method: 'DELETE',
+    headers: {
+      cookie: cookieHeader,
+      'Content-Type': 'application/json',
+    },
   });
-  return NextResponse.json(res.data);
+
+  let data: unknown = null;
+  const ct = backendRes.headers.get('content-type') ?? '';
+  if (ct.includes('application/json')) {
+    try {
+      data = await backendRes.json();
+    } catch {
+      data = null;
+    }
+  }
+
+  const response = NextResponse.json(data, { status: backendRes.status });
+
+  const setCookie = backendRes.headers.get('set-cookie');
+  if (setCookie) {
+    response.headers.set('Set-Cookie', setCookie);
+  }
+
+  return response;
 }

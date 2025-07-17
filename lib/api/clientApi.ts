@@ -8,36 +8,43 @@ export interface NotesResponse {
   totalPages: number;
 }
 
+
 export async function getSession(): Promise<User | null> {
   try {
     const { data } = await api.get<User>('/auth/session');
-    return data;
+    
+    return data ?? null;
   } catch {
     return null;
   }
 }
-
 
 export async function login(email: string, password: string): Promise<User> {
   const { data } = await api.post<User>('/auth/login', { email, password });
   return data;
 }
 
-
-export async function register(email: string, password: string): Promise<User> {
+export async function register(
+  email: string,
+  password: string
+): Promise<User> {
   const { data } = await api.post<User>('/auth/register', { email, password });
   return data;
 }
-
 
 export async function logout(): Promise<void> {
   await api.post<void>('/auth/logout');
 }
 
-
-export async function fetchProfile(): Promise<User> {
-  const { data } = await api.get<User>('/users/me');
+export async function getMe(): Promise<User> {
+  const { data } = await api.get<User>('/users/me', {
+  
+    withCredentials: true,
+  });
   return data;
+}
+export async function fetchProfile(): Promise<User> {
+  return getMe();
 }
 
 
@@ -47,6 +54,7 @@ export async function updateProfile(user: Partial<User>): Promise<User> {
 }
 
 
+ 
 export async function fetchNotes(
   search: string,
   page: number,
@@ -77,6 +85,8 @@ export async function deleteNote(id: string): Promise<Note> {
   const { data } = await api.delete<Note>(`/notes/${id}`);
   return data;
 }
+
+
 export async function updateNote(
   id: string,
   partial: Partial<Omit<Note, 'id' | 'createdAt' | 'updatedAt' | 'userId'>>
