@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import {
   QueryClient,
   HydrationBoundary,
@@ -5,18 +6,22 @@ import {
 } from '@tanstack/react-query';
 import { fetchNoteById } from '@/lib/api/clientApi';
 import NotePreviewClient from './NotePreview.client';
-import { notFound } from 'next/navigation';
 
 interface PageProps {
-  params: { id: string };
+  // важно: params теперь асинхронный
+  params: Promise<{ id: string }>;
 }
 
 export default async function NotePreviewPage({ params }: PageProps) {
-  const { id } = params;
+  // дожидаемся params
+  const { id } = await params;
+
+  // валидация
   const parsedId = Number(id);
   if (isNaN(parsedId)) return notFound();
 
-  const noteId = parsedId.toString();
+  // подготавливаем кэш для React Query (используем строку как ключ)
+  const noteId = String(parsedId);
   const queryClient = new QueryClient();
   await queryClient.prefetchQuery({
     queryKey: ['note', noteId],
@@ -25,6 +30,7 @@ export default async function NotePreviewPage({ params }: PageProps) {
 
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
+      {/* Передаём id клиенту (если NotePreviewClient его ожидает) */}
       <NotePreviewClient />
     </HydrationBoundary>
   );

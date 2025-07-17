@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { fetchProfileServer } from '@/lib/api/serverApi';
 import css from './page.module.css';
 
@@ -16,7 +17,17 @@ export const metadata: Metadata = {
 };
 
 export default async function ProfilePage() {
-  const user = await fetchProfileServer();
+  let user;
+  try {
+    user = await fetchProfileServer();
+  } catch {
+  
+    redirect('/sign-in');
+  }
+  if (!user) {
+    redirect('/sign-in');
+  }
+
   const avatarSrc = user.avatar ?? '/default-avatar.png';
 
   return (

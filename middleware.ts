@@ -1,28 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Приватные маршруты (всё, что начинается с '/profile' или '/notes')
 const privateRoutes = ['/profile', '/notes'];
-// Публичные маршруты для входа/регистрации
+
 const publicRoutes = ['/sign-in', '/sign-up'];
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export async function middleware(request: NextRequest) {
+  const { pathname, origin } = request.nextUrl;
   const accessToken = request.cookies.get('accessToken')?.value;
+  const refreshToken = request.cookies.get('refreshToken')?.value;
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   const isPrivateRoute = privateRoutes.some(route => pathname.startsWith(route));
 
-  // Неавторизованным доступ к приватным страницам запрещён
+  
+  if (!accessToken && refreshToken) {
+    try {
+      
+      const sessionRes = await fetch(`${origin}/api/auth/session`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      
+      if (sessionRes.ok) {
+        const setCookie = sessionRes.headers.get('set-cookie');
+        const response = NextResponse.next();
+        if (setCookie) {
+          response.headers.set('Set-Cookie', setCookie);
+        }
+        
+        if (isPublicRoute) {
+          return NextResponse.redirect(new URL('/profile', request.url));
+        }
+        return response;
+      }
+    } catch {
+    
+      return NextResponse.redirect(new URL('/sign-in', request.url));
+    }
+  }
+
+  
   if (!accessToken && isPrivateRoute) {
     return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
-  // Авторизованным запрещён доступ к страницам входа/регистрации
+  
   if (accessToken && isPublicRoute) {
     return NextResponse.redirect(new URL('/profile', request.url));
   }
 
-  // По умолчанию продолжаем обработку
+
   return NextResponse.next();
 }
 

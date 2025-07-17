@@ -7,19 +7,34 @@ import css from './AuthProvider.module.css';
 interface Props { children: ReactNode; }
 export default function AuthProvider({ children }: Props) {
   const [loading, setLoading] = useState(true);
-  const setUser = useAuthStore((s) => s.setUser);
-  const clearAuth = useAuthStore((s) => s.clearAuth);
+  const user = useAuthStore(s => s.user);
+  const setUser = useAuthStore(s => s.setUser);
+  const clearAuth = useAuthStore(s => s.clearAuth);
 
   useEffect(() => {
     async function init() {
-      const sessionUser = await getSession();
-      if (sessionUser) setUser(sessionUser);
-      else clearAuth();
-      setLoading(false);
+      if (user) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const sessionUser = await getSession();
+        if (sessionUser) {
+          setUser(sessionUser);
+        } else {
+          clearAuth();
+        }
+      } catch {
+        clearAuth();
+      } finally {
+        setLoading(false);
+      }
     }
     init();
-  }, [setUser, clearAuth]);
+  }, [user, setUser, clearAuth]);
 
-  if (loading) return <div className={css.loader}>Loading...</div>;
+  if (loading) {
+    return <div className={css.loader}>Loading...</div>;
+  }
   return <>{children}</>;
 }
