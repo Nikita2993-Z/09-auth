@@ -16,9 +16,7 @@ export default function SignInPage() {
     e.preventDefault()
     try {
       const user = await login(email, password)
-      // Сохраняем пользователя в Zustand-сторе
       setUser(user)
-      // После этого Навигация увидит isAuthenticated=true
       router.push('/profile')
     } catch (err) {
       console.error('Login failed', err)
