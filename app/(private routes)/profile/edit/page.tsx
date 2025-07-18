@@ -23,7 +23,7 @@ export default function EditProfilePage() {
           const profile = await fetchProfile();
           setUsername(profile.username);
         } catch {
-          // ignore
+        
         }
       }
       setLoading(false);

@@ -1,69 +1,75 @@
-import axios, { AxiosResponse } from 'axios';
+import api from './api';
 import { cookies } from 'next/headers';
 import type { User } from '@/types/user';
 import type { Note } from '@/types/note';
 
 const BACKEND_URL = 'https://notehub-api.goit.study';
 
-const serverApi = axios.create({
-  baseURL: BACKEND_URL,
-  withCredentials: true,
-});
+async function buildCookieHeader(): Promise<string> {
+  const store = await cookies();
+  const all = store.getAll();
+  if (!all.length) return '';
+  return all.map(c => `${c.name}=${c.value}`).join('; ');
+}
 
-
-export async function getSessionServer(): Promise<AxiosResponse<User> | null> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-
+/**
+ * SSR сессия: сразу пробуем получить профиль.
+ * Возвращает User или null.
+ */
+export async function getSessionServer(): Promise<User | null> {
+  const cookieHeader = await buildCookieHeader();
   try {
-    return await serverApi.get<User>('/auth/session', {
+    const { data } = await api.get<User>('/users/me', {
+      baseURL: BACKEND_URL,
       headers: { Cookie: cookieHeader },
     });
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err) && err.response?.status === 404) {
-      return null;
-    }
-    console.error('Session check failed:', err);
+    return data;
+  } catch {
     return null;
   }
 }
 
+/**
+ * SSR профиль: явный экспорт для profile/page.tsx
+ */
 export async function fetchProfileServer(): Promise<User> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-
-  const res = await serverApi.get<User>('/users/me', {
+  const cookieHeader = await buildCookieHeader();
+  const { data } = await api.get<User>('/users/me', {
+    baseURL: BACKEND_URL,
     headers: { Cookie: cookieHeader },
   });
-  return res.data;
+  return data;
+}
+
+export interface NotesListResponse {
+  notes: Note[];
+  totalPages: number;
 }
 
 export async function fetchNotesServer(
   search: string,
   page: number,
   tag?: string
-): Promise<{ notes: Note[]; totalPages: number }> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-
+): Promise<NotesListResponse> {
+  const cookieHeader = await buildCookieHeader();
   const perPage = 12;
   const params: Record<string, string | number> = { page, perPage };
   if (search) params.search = search;
   if (tag) params.tag = tag;
 
-  const res = await serverApi.get<{ notes: Note[]; totalPages: number }>('/notes', {
+  const { data } = await api.get<NotesListResponse>('/notes', {
+    baseURL: BACKEND_URL,
     headers: { Cookie: cookieHeader },
     params,
   });
-  return res.data;
+  return data;
 }
 
 export async function fetchNoteByIdServer(id: string): Promise<Note> {
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore.toString();
-
-  const res = await serverApi.get<Note>(`/notes/${id}`, {
+  const cookieHeader = await buildCookieHeader();
+  const { data } = await api.get<Note>(`/notes/${id}`, {
+    baseURL: BACKEND_URL,
     headers: { Cookie: cookieHeader },
   });
-  return res.data;
+  return data;
 }

@@ -6,6 +6,8 @@ import AuthProvider from "../components/AuthProvider/AuthProvider";
 import Header from "../components/Header/Header";
 import Footer from "../components/Footer/Footer";
 import type { ReactNode } from "react";
+import { getSessionServer } from "@/lib/api/serverApi";
+import type { User } from "@/types/user";
 
 export const roboto = Roboto({
   weight: ["400", "700"],
@@ -33,12 +35,14 @@ interface RootLayoutProps {
   modal: ReactNode;
 }
 
-export default function RootLayout({ children, modal }: RootLayoutProps) {
+export default async function RootLayout({ children, modal }: RootLayoutProps) {
+  const initialUser: User | null = await getSessionServer();
+
   return (
     <html lang="en">
       <body className={roboto.className}>
         <TanStackProvider>
-          <AuthProvider>
+          <AuthProvider initialUser={initialUser}>
             <Header />
             <main style={{ flex: 1 }}>{children}</main>
             {modal}
