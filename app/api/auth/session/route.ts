@@ -1,42 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { api } from '../../api';
+import { parse } from 'cookie';
+import { isAxiosError } from 'axios';
+import { logErrorResponse } from '../../_utils/utils';
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL || 'https://notehub-api.goit.study';
-
-export async function GET(request: NextRequest) {
-  const cookieHeader = request.headers.get('cookie') || '';
-  let backendRes;
+export async function GET() {
   try {
-    backendRes = await fetch(`${BACKEND}/auth/session`, {
-      headers: { cookie: cookieHeader },
-      credentials: 'include',
-    });
-  } catch (err) {
-    console.error('Session fetch error:', err);
-    return NextResponse.json(null);
-  }
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const refreshToken = cookieStore.get('refreshToken')?.value;
 
-  
-  if (!backendRes.ok) {
-    return NextResponse.json(null);
-  }
+    if (accessToken) {
+      return NextResponse.json({ success: true });
+    }
 
-  const contentType = backendRes.headers.get('content-type') || '';
-  if (!contentType.includes('application/json')) {
-    return NextResponse.json(null);
-  }
-
-  const data = await backendRes.json();
-  const response = NextResponse.json(data);
-
-  const setCookie = backendRes.headers.get('set-cookie');
-  if (setCookie) {
-    setCookie
-      .split(',')
-      .map(c => c.trim())
-      .forEach(cookie => {
-        response.headers.append('Set-Cookie', cookie);
+    if (refreshToken) {
+      const apiRes = await api.get('auth/session', {
+        headers: {
+          Cookie: cookieStore.toString(),
+        },
       });
-  }
 
-  return response;
+      const setCookie = apiRes.headers['set-cookie'];
+
+      if (setCookie) {
+        const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+        for (const cookieStr of cookieArray) {
+          const parsed = parse(cookieStr);
+
+          const options = {
+            expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
+            path: parsed.Path,
+            maxAge: Number(parsed['Max-Age']),
+          };
+
+          if (parsed.accessToken) cookieStore.set('accessToken', parsed.accessToken, options);
+          if (parsed.refreshToken) cookieStore.set('refreshToken', parsed.refreshToken, options);
+        }
+        return NextResponse.json({ success: true }, { status: apiRes.status });
+      }
+    }
+    return NextResponse.json({ error: 'Invalid or expired refresh token' }, { status: 401 });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json(
+        { error: error.message, response: error.response?.data },
+        { status: error.status }
+      );
+    }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }

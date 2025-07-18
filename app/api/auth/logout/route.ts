@@ -1,29 +1,35 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { api } from '../../api';
+import { cookies } from 'next/headers';
+import { isAxiosError } from 'axios';
+import { logErrorResponse } from '../../_utils/utils';
 
-export async function POST(req: NextRequest) {
-  // Берём куки из запроса
-  const cookieHeader = req.headers.get('cookie') ?? '';
+export async function POST() {
+  try {
+    const cookieStore = await cookies();
 
-  // Проксируем запрос на logout, передавая куки и нужные заголовки
-  const backendRes = await fetch(
-    'https://notehub-api.goit.study/auth/logout',
-    {
-      method: 'POST',
+    const accessToken = cookieStore.get('accessToken')?.value;
+    const refreshToken = cookieStore.get('refreshToken')?.value;
+
+    await api.post('auth/logout', null, {
       headers: {
-        'Content-Type': 'application/json',
-        cookie: cookieHeader,
+        Cookie: `accessToken=${accessToken}; refreshToken=${refreshToken}`,
       },
+    });
+
+    cookieStore.delete('accessToken');
+    cookieStore.delete('refreshToken');
+
+    return NextResponse.json({ message: 'Logged out successfully' }, { status: 200 });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json(
+        { error: error.message, response: error.response?.data },
+        { status: error.status }
+      );
     }
-  );
-
-  // Формируем ответ клиенту с тем же статусом
-  const response = NextResponse.json(null, { status: backendRes.status });
-
-  // Проксируем Set-Cookie из ответа бэкенда
-  const setCookie = backendRes.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('Set-Cookie', setCookie);
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  return response;
 }

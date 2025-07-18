@@ -1,72 +1,81 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import { api } from '../../api';
+import { cookies } from 'next/headers';
+import { logErrorResponse } from '../../_utils/utils';
+import { isAxiosError } from 'axios';
 
-const BACKEND = 'https://notehub-api.goit.study'; 
-// Хочешь — замени на env, НО не ставь localhost:3000, иначе зациклится прокси!
-
-interface RouteContext {
+type Props = {
   params: Promise<{ id: string }>;
+};
+
+export async function GET(request: Request, { params }: Props) {
+  try {
+    const cookieStore = await cookies();
+    const { id } = await params;
+    const res = await api(`/notes/${id}`, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+    });
+    return NextResponse.json(res.data, { status: res.status });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json(
+        { error: error.message, response: error.response?.data },
+        { status: error.status }
+      );
+    }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
 }
 
-/* ---------- GET /api/notes/:id ---------- */
-export async function GET(req: NextRequest, { params }: RouteContext) {
-  const { id } = await params;
-  const cookieHeader = req.headers.get('cookie') ?? '';
+export async function DELETE(request: Request, { params }: Props) {
+  try {
+    const cookieStore = await cookies();
+    const { id } = await params;
 
-  const backendRes = await fetch(`${BACKEND}/notes/${id}`, {
-    headers: { cookie: cookieHeader, 'Content-Type': 'application/json' },
-    // credentials не обязателен, мы сами передаём cookie
-  });
-
-  let data: unknown = null;
-  const ct = backendRes.headers.get('content-type') ?? '';
-  if (ct.includes('application/json')) {
-    try {
-      data = await backendRes.json();
-    } catch {
-      data = null;
+    const res = await api.delete(`/notes/${id}`, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+    });
+    return NextResponse.json(res.data, { status: res.status });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json(
+        { error: error.message, response: error.response?.data },
+        { status: error.status }
+      );
     }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  // Если бекенд вернул 404, 401 — проксируем статус без мутаций
-  const response = NextResponse.json(data, { status: backendRes.status });
-
-  const setCookie = backendRes.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('Set-Cookie', setCookie);
-  }
-
-  return response;
 }
 
-/* ---------- DELETE /api/notes/:id ---------- */
-export async function DELETE(req: NextRequest, { params }: RouteContext) {
-  const { id } = await params;
-  const cookieHeader = req.headers.get('cookie') ?? '';
+export async function PATCH(request: Request, { params }: Props) {
+  try {
+    const cookieStore = await cookies();
+    const { id } = await params;
+    const body = await request.json();
 
-  const backendRes = await fetch(`${BACKEND}/notes/${id}`, {
-    method: 'DELETE',
-    headers: {
-      cookie: cookieHeader,
-      'Content-Type': 'application/json',
-    },
-  });
-
-  let data: unknown = null;
-  const ct = backendRes.headers.get('content-type') ?? '';
-  if (ct.includes('application/json')) {
-    try {
-      data = await backendRes.json();
-    } catch {
-      data = null;
+    const res = await api.patch(`/notes/${id}`, body, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+    });
+    return NextResponse.json(res.data, { status: res.status });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json(
+        { error: error.message, response: error.response?.data },
+        { status: error.status }
+      );
     }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  const response = NextResponse.json(data, { status: backendRes.status });
-
-  const setCookie = backendRes.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('Set-Cookie', setCookie);
-  }
-
-  return response;
 }

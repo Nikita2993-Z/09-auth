@@ -40,8 +40,8 @@ export default async function ProfilePage() {
           height={100}
           className={css.avatar}
         />
-        <h1 className={css.username}>{user.username}</h1>
-        <p className={css.email}>{user.email}</p>
+        <h1 className={css.username}> Username:{user.username}</h1>
+        <p className={css.email}>Email:{user.email}</p>
         <Link href="/profile/edit" className={css.editLink}>
           Edit Profile
         </Link>

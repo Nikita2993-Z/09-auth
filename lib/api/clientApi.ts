@@ -48,8 +48,14 @@ export async function fetchProfile(): Promise<User> {
 }
 
 
-export async function updateProfile(user: Partial<User>): Promise<User> {
-  const { data } = await api.patch<User>('/users/me', user);
+export async function updateProfile(user: {
+  email: string;
+  username: string;
+}): Promise<User> {
+  const { data } = await api.patch<User>('/users/me', {
+    email:    user.email,
+    username: user.username,
+  });
   return data;
 }
 

@@ -1,68 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
 
-const BACKEND = process.env.NEXT_PUBLIC_API_URL ?? 'https://notehub-api.goit.study';
+import { NextResponse } from 'next/server';
+import { api } from '../../api';
+import { cookies } from 'next/headers';
+import { logErrorResponse } from '../../_utils/utils';
+import { isAxiosError } from 'axios';
 
-export async function GET(req: NextRequest) {
-  const cookieHeader = req.headers.get('cookie') ?? '';
-  const backendRes = await fetch(`${BACKEND}/users/me`, {
-    headers: { cookie: cookieHeader },
-    credentials: 'include',
-  });
-  if (!backendRes.ok) {
-    return NextResponse.json(
-      { error: await backendRes.text() },
-      { status: backendRes.status }
-    );
+export async function GET() {
+  try {
+    const cookieStore = await cookies();
+
+    const res = await api.get('/users/me', {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+    });
+    return NextResponse.json(res.data, { status: res.status });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json(
+        { error: error.message, response: error.response?.data },
+        { status: error.status }
+      );
+    }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-  const data = await backendRes.json();
-  const response = NextResponse.json(data, { status: 200 });
-
-  const setCookie = backendRes.headers.get('set-cookie');
-  if (setCookie) {
-    setCookie
-      .split(',')
-      .map((c) => c.trim())
-      .forEach((cookie) => {
-        response.headers.append('Set-Cookie', cookie);
-      });
-  }
-
-  return response;
 }
 
-export async function PATCH(req: NextRequest) {
-  const cookieHeader = req.headers.get('cookie') ?? '';
-  const body = await req.json();
+export async function PATCH(request: Request) {
+  try {
+    const cookieStore = await cookies();
+    const body = await request.json();
 
-  const backendRes = await fetch(`${BACKEND}/users/me`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      cookie: cookieHeader,
-    },
-    credentials: 'include',
-    body: JSON.stringify(body),
-  });
-
-  const contentType = backendRes.headers.get('content-type') ?? '';
-  let data: unknown;
-  if (contentType.includes('application/json')) {
-    data = await backendRes.json();
-  } else {
-    data = await backendRes.text();
+    const res = await api.patch('/users/me', body, {
+      headers: {
+        Cookie: cookieStore.toString(),
+      },
+    });
+    return NextResponse.json(res.data, { status: res.status });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      logErrorResponse(error.response?.data);
+      return NextResponse.json(
+        { error: error.message, response: error.response?.data },
+        { status: error.status }
+      );
+    }
+    logErrorResponse({ message: (error as Error).message });
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
-
-  const response = NextResponse.json(data, { status: backendRes.status });
-
-  const setCookie = backendRes.headers.get('set-cookie');
-  if (setCookie) {
-    setCookie
-      .split(',')
-      .map((c) => c.trim())
-      .forEach((cookie) => {
-        response.headers.append('Set-Cookie', cookie);
-      });
-  }
-
-  return response;
 }
