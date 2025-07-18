@@ -2,9 +2,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
-  padding: 0;
+  padding-left: 300px;
+  padding-right: 500px;
   margin: 0;
   list-style: none;
+  justify-content: center;
 }
 
 .listItem {

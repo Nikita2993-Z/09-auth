@@ -12,13 +12,14 @@ export default function Header() {
       <nav aria-label='Main Navigation'>
         <ul className={css.navigation}>
           <li>
+            <TagsMenu />
+          </li>
+          <li>
             <Link href='/' className={css.navigationLink}>
               Home
             </Link>
           </li>
-          <li>
-            <TagsMenu />
-          </li>
+          
           <AuthNavigation />
         </ul>
       </nav>

@@ -1,8 +1,10 @@
 .controls {
   display: flex;
   align-items: center;
+  padding-top: 10px;
   gap: 16px;
   margin-bottom: 24px;
+  justify-content: center;
 }
 
 .createButton {

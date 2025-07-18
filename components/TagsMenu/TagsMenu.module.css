@@ -1,6 +1,7 @@
 .menuContainer {
   position: relative;
   display: inline-block;
+  justify-content: center;
 }
 
 .menuButton {
