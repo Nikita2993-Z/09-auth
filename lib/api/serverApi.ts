@@ -29,9 +29,7 @@ export async function getSessionServer(): Promise<User | null> {
   }
 }
 
-/**
- * SSR профиль: явный экспорт для profile/page.tsx
- */
+
 export async function fetchProfileServer(): Promise<User> {
   const cookieHeader = await buildCookieHeader();
   const { data } = await api.get<User>('/users/me', {
